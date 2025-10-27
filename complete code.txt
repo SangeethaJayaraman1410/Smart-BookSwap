@@ -1,0 +1,707 @@
+login.html:
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login / Register Page</title>
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    height: 100vh;
+    background: linear-gradient(135deg, #74ebd5 0%, #ACB6E5 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Background image overlay */
+  body::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+    opacity: 0.25;
+    z-index: 0;
+  }
+
+  .title {
+    position: absolute;
+    top: 30px;
+    text-align: center;
+    width: 100%;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+    letter-spacing: 2px;
+  }
+
+  .container {
+    width: 360px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px 25px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    z-index: 1;
+  }
+
+  h2 {
+    text-align: center;
+    color: #222;
+    margin-bottom: 15px;
+  }
+
+  input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.8);
+    font-size: 15px;
+  }
+
+  button {
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(90deg, #56ab2f, #a8e063);
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  }
+
+  .switch {
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  .switch a {
+    color: #007BFF;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: bold;
+  }
+
+  .switch a:hover {
+    text-decoration: underline;
+  }
+
+  .message {
+    text-align: center;
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+
+  .error { color: #d9534f; }
+  .success { color: #28a745; }
+
+</style>
+</head>
+<body>
+  <div class="title">📚 Smart Book Swap</div>
+
+  <div class="container">
+    <div class="message" id="message"></div>
+
+    <!-- LOGIN FORM -->
+    <div id="loginForm">
+      <h2>Login</h2>
+      <input type="email" id="loginEmail" placeholder="Email" required>
+      <input type="password" id="loginPassword" placeholder="Password" required>
+      <button onclick="login()">Login</button>
+      <div class="switch">
+        <p>New user? <a onclick="showRegister()">Register</a></p>
+        <p>Forgot password? <a onclick="showReset()">Reset Password</a></p>
+      </div>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div id="registerForm" style="display:none;">
+      <h2>Register</h2>
+      <input type="text" id="regName" placeholder="Full Name" required>
+      <input type="email" id="regEmail" placeholder="Email" required>
+      <input type="password" id="regPassword" placeholder="Password" required>
+      <button onclick="register()">Register</button>
+      <div class="switch">
+        <p>Already have an account? <a onclick="showLogin()">Login</a></p>
+      </div>
+    </div>
+
+    <!-- RESET PASSWORD FORM -->
+    <div id="resetForm" style="display:none;">
+      <h2>Reset Password</h2>
+      <input type="email" id="resetEmail" placeholder="Enter Email" required>
+      <input type="password" id="resetPassword" placeholder="New Password" required>
+      <button onclick="resetPassword()">Reset</button>
+      <div class="switch">
+        <p>Back to <a onclick="showLogin()">Login</a></p>
+      </div>
+    </div>
+  </div>
+
+<script>
+function showRegister(){ document.getElementById("loginForm").style.display="none"; document.getElementById("registerForm").style.display="block"; document.getElementById("resetForm").style.display="none"; clearMessage(); }
+function showLogin(){ document.getElementById("loginForm").style.display="block"; document.getElementById("registerForm").style.display="none"; document.getElementById("resetForm").style.display="none"; }
+function showReset(){ document.getElementById("loginForm").style.display="none"; document.getElementById("registerForm").style.display="none"; document.getElementById("resetForm").style.display="block"; clearMessage(); }
+
+function register(){
+  let name=document.getElementById("regName").value;
+  let email=document.getElementById("regEmail").value;
+  let password=document.getElementById("regPassword").value;
+  if(!name||!email||!password){ showMessage("Please fill all fields","error"); return; }
+  if(localStorage.getItem(email)){ showMessage("User already exists! Please login.","error"); showLogin(); return; }
+  let userData={name:name,email:email,password:password};
+  localStorage.setItem(email,JSON.stringify(userData));
+  let usersData=JSON.parse(localStorage.getItem("usersData"))||{};
+  usersData[email]={books:[],points:0,friends:0};
+  localStorage.setItem("usersData",JSON.stringify(usersData));
+  showMessage("✅ Registration successful! Please login.","success");
+  setTimeout(()=>{ showLogin(); },600);
+}
+
+function login(){
+  let email=document.getElementById("loginEmail").value;
+  let password=document.getElementById("loginPassword").value;
+  let data=localStorage.getItem(email);
+  if(!data){ showMessage("User not found! Please register first.","error"); return; }
+  let user=JSON.parse(data);
+  if(user.password===password){
+    localStorage.setItem("loggedInUser",email);
+    showMessage("✅ Login successful! Redirecting...","success");
+    setTimeout(()=>{ window.location.href="index.html"; },1000);
+  } else showMessage("❌ Wrong password! Try again or reset it.","error");
+}
+
+function resetPassword(){
+  let email=document.getElementById("resetEmail").value;
+  let newPass=document.getElementById("resetPassword").value;
+  let data=localStorage.getItem(email);
+  if(!data){ showMessage("Email not found! Please register.","error"); return; }
+  let user=JSON.parse(data);
+  user.password=newPass;
+  localStorage.setItem(email,JSON.stringify(user));
+  showMessage("✅ Password reset successful! Please login.","success");
+  setTimeout(()=>{ showLogin(); },600);
+}
+
+function showMessage(msg,type){ let msgBox=document.getElementById("message"); msgBox.innerText=msg; msgBox.className="message "+type; }
+function clearMessage(){ let msgBox=document.getElementById("message"); msgBox.innerText=""; msgBox.className="message"; }
+</script>
+</body>
+</html>
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+index.html
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book Swap - Home</title>
+<style>
+  body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    color: #222;
+    background: linear-gradient(120deg, #e3f2fd, #ffe0f0, #d0f0c0, #fff9c4);
+    background-size: 400% 400%;
+    animation: brightFlash 10s ease-in-out infinite;
+  }
+  @keyframes brightFlash {
+    0% { background-position: 0% 50%; }
+    25% { background-position: 50% 100%; }
+    50% { background-position: 100% 50%; }
+    75% { background-position: 50% 0%; }
+    100% { background-position: 0% 50%; }
+  }
+  .floating-bg img {
+    position: absolute;
+    width: 150px;
+    opacity: 0.25;
+    animation: float 9s ease-in-out infinite;
+    z-index: 0;
+    filter: drop-shadow(0px 5px 10px rgba(0,0,0,0.1));
+  }
+  @keyframes float {
+    0% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-30px) rotate(6deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+  }
+  .book1 { top: 10%; left: 5%; animation-delay: 0s; }
+  .book2 { top: 20%; right: 8%; animation-delay: 2s; }
+  .book3 { bottom: 20%; left: 12%; animation-delay: 1s; }
+  .book4 { bottom: 10%; right: 10%; animation-delay: 3s; }
+  .reader { top: 45%; left: 40%; width: 220px; opacity: 0.15; animation-delay: 4s; }
+
+  header {
+    background: linear-gradient(90deg, #43a047, #81c784);
+    color: white;
+    padding: 15px;
+    text-align: center;
+    font-size: 22px;
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.2);
+  }
+  header button {
+    float: right;
+    margin-top: -5px;
+    background-color: #2f5130;
+    border: none;
+    color: white;
+    border-radius: 5px;
+    padding: 8px 12px;
+    cursor: pointer;
+  }
+  header button:hover { background-color: #1c351c; }
+
+  .container {
+    padding: 20px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.9);
+    margin: 40px auto;
+    width: 80%;
+    border-radius: 18px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 5;
+  }
+
+  button {
+    margin: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(90deg, #4CAF50, #81c784);
+    color: white;
+    transition: transform 0.2s, background 0.2s;
+  }
+  button:hover {
+    background: linear-gradient(90deg, #388e3c, #66bb6a);
+    transform: scale(1.05);
+  }
+
+  #addBookForm {
+    display: none;
+    background-color: rgba(255, 255, 255, 0.92);
+    padding: 20px;
+    border-radius: 15px;
+    width: 60%;
+    margin: 30px auto;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    backdrop-filter: blur(8px);
+  }
+
+  input, select {
+    padding: 8px;
+    margin: 5px;
+    width: 80%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+
+  #bot {
+    display: none;
+    margin-top: 20px;
+    background: rgba(255,255,255,0.9);
+    padding: 15px;
+    width: 60%;
+    margin: auto;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    backdrop-filter: blur(6px);
+  }
+  #bot h3 { color: #333; }
+
+  #pointsInfo {
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #2d2d2d;
+  }
+</style>
+</head>
+<body>
+
+<div class="floating-bg">
+  <img src="https://cdn-icons-png.flaticon.com/512/1048/1048953.png" class="book1" alt="book1">
+  <img src="https://cdn-icons-png.flaticon.com/512/1048/1048957.png" class="book2" alt="book2">
+  <img src="https://cdn-icons-png.flaticon.com/512/2972/2972085.png" class="book3" alt="book3">
+  <img src="https://cdn-icons-png.flaticon.com/512/2972/2972089.png" class="book4" alt="book4">
+  <img src="https://cdn-icons-png.flaticon.com/512/2970/2970638.png" class="reader" alt="reader">
+</div>
+
+<header>
+  Welcome, <span id="username"></span> 👋
+  <button onclick="logout()">Logout</button>
+</header>
+
+<div class="container">
+  <button onclick="showAddBook()">Add Book</button>
+  <button onclick="goToRepo()">Available Books</button>
+  <button onclick="showHistory()">My History</button>
+  <button onclick="showBot()">Helpline Bot</button>
+  <button onclick="inviteFriend()">Invite Friend</button>
+
+  <div id="pointsInfo"></div>
+
+  <!-- Converted div to form -->
+  <form id="addBookForm" onsubmit="saveBook(); return false;">
+    <h3>Add Book Details</h3>
+    <input type="text" id="bookName" placeholder="Book Name"><br>
+    <input type="text" id="version" placeholder="Version"><br>
+    <input type="text" id="author" placeholder="Author"><br>
+    <input type="text" id="publisher" placeholder="Publisher"><br>
+    <input type="number" id="year" placeholder="Year"><br>
+    <select id="type1">
+      <option value="">Select condition</option>
+      <option value="New">New</option>
+      <option value="Used">Used</option>
+    </select><br>
+    <select id="type">
+      <option value="">Select Donate / Exchange</option>
+      <option value="Donate">Donate</option>
+      <option value="Exchange">Exchange</option>
+    </select><br>
+    <input type="email" id="mail" placeholder="Your Mail ID"><br>
+    <input type="text" id="contact" placeholder="Contact Number"><br>
+    <button type="submit">OK</button>
+  </form>
+
+  <div id="bot">
+    <h3>Helpline Bot 🤖</h3>
+    <input type="text" id="query" placeholder="Ask your question..." style="width:90%">
+    <button onclick="askBot()">Ask</button>
+    <p id="botResponse" style="font-weight:bold; color:#333;"></p>
+  </div>
+</div>
+
+<script>
+const user = localStorage.getItem("loggedInUser");
+if(!user){
+  alert("You must login first!");
+  window.location.href = "login.html";
+}
+document.getElementById("username").textContent = user;
+
+let usersData = JSON.parse(localStorage.getItem("usersData")) || {};
+if (!usersData[user]) usersData[user] = { books: [], points: 0, friends: 0 };
+updatePointsDisplay();
+
+function showAddBook() { document.getElementById("addBookForm").style.display = "block"; }
+
+function saveBook() {
+  const name = document.getElementById("bookName").value;
+  const version = document.getElementById("version").value;
+  const author = document.getElementById("author").value;
+  const publisher = document.getElementById("publisher").value;
+  const year = document.getElementById("year").value;
+  const type1 = document.getElementById("type1").value;
+  const type = document.getElementById("type").value;
+  const mail = document.getElementById("mail").value;
+  const contact = document.getElementById("contact").value;
+
+  if (!name || !type1 || !type) { alert("Please fill all details!"); return; }
+
+  const book = { name, version, author, publisher, year, type1, type, mail, contact, addedBy: user };
+  let repo = JSON.parse(localStorage.getItem("bookRepo")) || [];
+  repo.push(book);
+  localStorage.setItem("bookRepo", JSON.stringify(repo));
+  usersData[user].books.push(book);
+
+  if (type === "Donate") usersData[user].points += 10;
+  else if (type === "Exchange") usersData[user].points += 5;
+
+  localStorage.setItem("usersData", JSON.stringify(usersData));
+  alert("Book added successfully!");
+
+  document.getElementById("addBookForm").reset(); // Works now
+  document.getElementById("addBookForm").style.display = "none";
+  updatePointsDisplay();
+}
+
+function goToRepo() { window.location.href = "repo.html"; }
+function showHistory() { window.location.href = "history.html"; }
+
+function inviteFriend() {
+  const email = prompt("Enter your friend's email:");
+  if (email) {
+    usersData[user].friends += 1;
+    localStorage.setItem("usersData", JSON.stringify(usersData));
+    updatePointsDisplay();
+    alert(`Invite sent to ${email}`);
+  }
+}
+
+function showBot() { document.getElementById("bot").style.display = "block"; }
+
+function askBot() {
+  const q = document.getElementById("query").value.toLowerCase().trim();
+  let response = "";
+
+  if (q.includes("add book")) response = "📖 Click 'Add Book', fill details, and click OK.";
+  else if (q.includes("available")) response = "📚 Click 'Available Books' to view shared books.";
+  else if (q.includes("earn points")) response = "💰 Donate = 10 pts, Exchange = 5 pts, Invite friends for bonuses!";
+  else if (q.includes("invite friend")) response = "👥 Click 'Invite Friend' and enter your friend's email.";
+  else {
+    const repo = JSON.parse(localStorage.getItem("bookRepo")) || [];
+    const stopWords = ["i","want","a","the","book","with","chapter","please","give","me","any","show"];
+    const queryWords = q.split(" ").filter(w => !stopWords.includes(w));
+    const matches = repo.filter(b => queryWords.some(w => b.name.toLowerCase().includes(w)));
+    response = matches.length ? 
+      "📚 Books Found:\n" + matches.map(b => `• ${b.name} | ${b.author} | ${b.year}`).join("\n") :
+      "❌ No matching books found.";
+  }
+  document.getElementById("botResponse").textContent = response;
+}
+
+function updatePointsDisplay() {
+  const u = usersData[user];
+  const badges = Math.floor(u.points / 100) + Math.floor(u.friends / 5);
+  let msg = `Points: ${u.points} | Friends: ${u.friends} | Badges: ${badges}`;
+  if (badges >= 4) msg += ` 🎉 Congratulations ${user}! You earned enough badges for a certificate!`;
+  document.getElementById("pointsInfo").textContent = msg;
+}
+
+function logout() {
+  localStorage.removeItem("loggedInUser");
+  window.location.href = "login.html";
+}
+</script>
+
+</body>
+</html>
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+
+repo.html
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Book Repository</title>
+<style>
+  /* ---------- BODY BACKGROUND WITH FLOATING BOOK IMAGES ---------- */
+  body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 40px;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #85d7ff, #a6ffeb, #ffd685);
+    background-size: 400% 400%;
+    animation: gradientMove 20s ease infinite;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  @keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Floating stock images of books */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background:
+      url('https://images.unsplash.com/photo-1512820790803-83ca734da794?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxMTI1OTl8MHwxfHNlYXJjaHwxfHxib29rc3RhY2t8ZW58MHx8fHwxNjkxMjc1MjY3&ixlib=rb-4.0.3&q=80&w=200') 10% 15% / 150px no-repeat,
+      url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxMTI1OTl8MHwxfHNlYXJjaHwxfHxib29rc3R8ZW58MHx8fHwxNjkxMjc1MjY3&ixlib=rb-4.0.3&q=80&w=200') 80% 20% / 140px no-repeat,
+      url('https://images.unsplash.com/photo-1555529669-5b66b1b2e31d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxMTI1OTl8MHwxfHNlYXJjaHwxfHxib29rc3R8ZW58MHx8fHwxNjkxMjc1MjY3&ixlib=rb-4.0.3&q=80&w=200') 25% 70% / 160px no-repeat,
+      url('https://images.unsplash.com/photo-1601933476116-fb7b67c62db3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=MnwxMTI1OTl8MHwxfHNlYXJjaHwxfHxib29rc3R8ZW58MHx8fHwxNjkxMjc1MjY3&ixlib=rb-4.0.3&q=80&w=200') 70% 60% / 150px no-repeat;
+    opacity: 0.18;
+    z-index: -1;
+    animation: floatBooks 25s linear infinite alternate;
+  }
+
+  @keyframes floatBooks {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(25px); }
+    100% { transform: translateY(0px); }
+  }
+
+  /* ---------- HEADING ---------- */
+  h2 {
+    text-align: center;
+    color: #2e7d32;
+    font-size: 28px;
+    background: rgba(255,255,255,0.8);
+    padding: 15px;
+    border-radius: 12px;
+    width: fit-content;
+    margin: 0 auto 25px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+  }
+
+  /* ---------- TABLE DESIGN ---------- */
+  table {
+    width: 90%;
+    margin: auto;
+    border-collapse: collapse;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    border-radius: 15px;
+    overflow: hidden;
+  }
+
+  th, td {
+    border: 1px solid #ddd;
+    padding: 12px 15px;
+    text-align: left;
+  }
+
+  th {
+    background: linear-gradient(90deg, #4CAF50, #81c784);
+    color: white;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+
+  tr:nth-child(even) { background-color: #f8fff8; }
+  tr:hover { background-color: #eafbea; transition: 0.3s; }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 768px) {
+    body { padding: 20px; }
+    table { width: 100%; font-size: 14px; }
+    h2 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<h2>📚 Public Book Repository</h2>
+<table id="repoTable">
+  <tr>
+    <th>Book Name</th><th>Version</th><th>Author</th>
+    <th>Publisher</th><th>Year</th><th>Condition</th><th>Type</th><th>Added By</th>
+  </tr>
+</table>
+
+<script>
+const repo = JSON.parse(localStorage.getItem("bookRepo"))||[];
+const table=document.getElementById("repoTable");
+repo.forEach(b=>{
+  const mail = b.mail || "";
+  const contact = b.contact || "";
+  const addedByInfo = [mail,contact].filter(x=>x).join(" , ");
+  const row=`<tr>
+    <td>${b.name}</td><td>${b.version}</td><td>${b.author}</td>
+    <td>${b.publisher}</td><td>${b.year}</td><td>${b.type1}</td><td>${b.type}</td>
+    <td>${addedByInfo}</td>
+  </tr>`;
+  table.innerHTML+=row;
+});
+</script>
+</body>
+</html>
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+
+history.html
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Book History</title>
+<style>
+  /* ---------- BODY & FIXED BACKGROUND ---------- */
+  body {
+    font-family: Arial; 
+    margin: 0; 
+    padding: 20px;
+    min-height: 100vh;
+    /* Bright gradient overlay + fixed background image */
+    background: linear-gradient(rgba(255,255,255,0.6), rgba(255,255,255,0.6)),
+                url('https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1600&q=80') no-repeat center center fixed;
+    background-size: cover;
+    color: #333;
+  }
+
+  /* ---------- TABLE & HEADER ---------- */
+  h2 { text-align:center; color:#333; margin-bottom:20px; }
+  table { width:100%; border-collapse: collapse; margin-top:20px; background: rgba(255,255,255,0.9); border-radius:10px; overflow:hidden; }
+  th, td { border:1px solid #ccc; padding:10px; text-align:left; }
+  th { background-color:#4CAF50; color:white; }
+  button { padding:10px 15px; margin:10px 0; background:#4CAF50; color:white; border:none; border-radius:5px; cursor:pointer; transition: transform 0.2s, background 0.2s; }
+  button:hover { background:#45a049; transform: scale(1.05); }
+</style>
+</head>
+<body>
+
+<h2>📖 My Added Books</h2>
+<button onclick="goBack()">⬅ Back</button>
+<table id="historyTable">
+  <tr>
+    <th>Book Name</th><th>Version</th><th>Author</th>
+    <th>Publisher</th><th>Year</th><th>Condition</th><th>Type</th><th>Mail</th><th>Contact</th>
+  </tr>
+</table>
+
+<script>
+const user = localStorage.getItem("loggedInUser");
+if(!user){ alert("You must login first!"); window.location.href="login.html"; }
+
+const usersData = JSON.parse(localStorage.getItem("usersData")) || {};
+const userBooks = usersData[user] ? usersData[user].books : [];
+
+const table = document.getElementById("historyTable");
+
+if(userBooks.length===0){
+  const row = `<tr><td colspan="8" style="text-align:center;">No books added yet!</td></tr>`;
+  table.innerHTML += row;
+} else {
+  userBooks.forEach(b => {
+    const row = `<tr>
+      <td>${b.name}</td>
+      <td>${b.version}</td>
+      <td>${b.author}</td>
+      <td>${b.publisher}</td>
+      <td>${b.year}</td>
+      <td>${b.type1}</td>
+      <td>${b.type}</td>
+      <td>${b.mail || ""}</td>
+      <td>${b.contact || ""}</td>
+    </tr>`;
+    table.innerHTML += row;
+  });
+}
+
+function goBack(){ window.location.href="index.html"; }
+</script>
+
+</body>
+</html>
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+
